@@ -1,2 +1,7 @@
 /web/dist/
 za
+
+# 运行时产物
+/tmp/
+/logs/
+copilot-go
