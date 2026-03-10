@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# dev.sh - 启动 Vite 前端开发服务器
+# dev.sh - 前台启动 Vite 前端开发服务器
 #
 # 用法:
 #   bash scripts/frontend/dev.sh
@@ -8,6 +8,7 @@
 #   前端热更新 → http://localhost:35173  (HMR)
 #   /api 请求会代理到 → http://localhost:37000 (Go 后端)
 #
+# 后台启动请使用: bash scripts/frontend/start.sh
 # 请先确保 Go 后端已启动: bash scripts/backend/dev.sh 或 bash scripts/backend/start.sh
 
 set -e
@@ -25,7 +26,7 @@ else
   exit 1
 fi
 
-echo "▶ 启动 Vite dev server（使用 ${PKG_MGR}）"
+echo "▶ 启动 Vite dev server（前台，使用 ${PKG_MGR}）"
 echo "  前端热更新 → http://localhost:35173"
 echo "  API 代理   → http://localhost:37000"
 echo "  按 Ctrl+C 停止"
