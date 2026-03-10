@@ -2,7 +2,7 @@
 # start.sh - 后台启动（生产/常驻运行）
 #
 # 用法:
-#   bash scripts/backend/start.sh
+#   bash internal/scripts/start.sh
 
 set -e
 
@@ -13,6 +13,7 @@ cd "$ROOT_DIR"
 
 WEB_PORT="${WEB_PORT:-37000}"
 PROXY_PORT="${PROXY_PORT:-34141}"
+BINARY="${ROOT_DIR}/build/copilot-go"
 PID_FILE="${ROOT_DIR}/tmp/copilot-go.pid"
 LOG_FILE="${ROOT_DIR}/logs/copilot-go.log"
 
@@ -29,17 +30,18 @@ if [ -f "$PID_FILE" ]; then
 fi
 
 # 确保目录存在
+mkdir -p "$(dirname "$BINARY")"
 mkdir -p "$(dirname "$PID_FILE")"
 mkdir -p "$(dirname "$LOG_FILE")"
 
-# 构建（如果没有二进制或源码更新）
-if [ ! -f "$ROOT_DIR/copilot-go" ] || [ "$ROOT_DIR/main.go" -nt "$ROOT_DIR/copilot-go" ]; then
+# 构建（如果没有二进制或 main.go 更新）
+if [ ! -f "$BINARY" ] || [ "$ROOT_DIR/main.go" -nt "$BINARY" ]; then
   echo "构建 copilot-go..."
-  go build -o copilot-go .
+  go build -o "$BINARY" .
 fi
 
 # 后台启动
-nohup ./copilot-go \
+nohup "$BINARY" \
   --web-port="${WEB_PORT}" \
   --proxy-port="${PROXY_PORT}" \
   >> "$LOG_FILE" 2>&1 &
@@ -52,5 +54,5 @@ echo "  Web Console : http://localhost:${WEB_PORT}"
 echo "  Proxy       : http://localhost:${PROXY_PORT}"
 echo "  日志文件    : $LOG_FILE"
 echo ""
-echo "查看日志: bash scripts/backend/logs.sh"
-echo "停止服务: bash scripts/backend/stop.sh"
+echo "查看日志: bash internal/scripts/logs.sh"
+echo "停止服务: bash internal/scripts/stop.sh"

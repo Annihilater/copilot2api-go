@@ -3,8 +3,7 @@
 /web/node_modules/
 
 # 后端构建产物
-copilot-go
-copilot-go.exe
+/build/
 
 # 运行时产物
 /tmp/
