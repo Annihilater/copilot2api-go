@@ -10,5 +10,9 @@ copilot-go.exe
 /tmp/
 /logs/
 
+# IDE
+.idea/
+.claude/
+
 # 杂项
 za
