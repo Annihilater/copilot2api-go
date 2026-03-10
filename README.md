@@ -29,6 +29,19 @@ A reverse-engineered proxy for the GitHub Copilot API, rewritten in Go. Exposes 
 
 ### Quick Start
 
+#### Homebrew (macOS recommended)
+
+```bash
+brew tap Annihilater/copilot2api-go
+brew install copilot-go
+
+# Start as a background service (auto-restart on login)
+brew services start copilot-go
+```
+
+- Web Console: http://localhost:37000
+- Proxy API: http://localhost:34141
+
 #### From Source
 
 ```bash
@@ -311,6 +324,19 @@ GitHub Copilot API 反向代理服务（Go 重写版），支持多账号 Web �
 - **Docker 支持**：多阶段构建，生产镜像体积小
 
 ### 快速开始
+
+#### Homebrew（macOS 推荐）
+
+```bash
+brew tap Annihilater/copilot2api-go
+brew install copilot-go
+
+# 以后台服务方式启动（登录后自动恢复）
+brew services start copilot-go
+```
+
+- Web 控制台：http://localhost:37000
+- 代理 API：http://localhost:34141
 
 #### 源码编译
 

@@ -14,10 +14,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set version output
+        id: meta
+        run: echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -67,6 +73,15 @@ jobs:
             fi
           done
 
+      - name: Compute SHA256 checksums
+        id: sha256
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          echo "darwin_amd64=$(sha256sum dist/copilot-go_${VERSION}_darwin_amd64.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          echo "darwin_arm64=$(sha256sum dist/copilot-go_${VERSION}_darwin_arm64.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          echo "linux_amd64=$(sha256sum dist/copilot-go_${VERSION}_linux_amd64.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          echo "linux_arm64=$(sha256sum dist/copilot-go_${VERSION}_linux_arm64.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -74,6 +89,84 @@ jobs:
           files: |
             dist/*.tar.gz
             dist/*.zip
+
+      - name: Update Homebrew Formula
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          REPO_OWNER="${{ github.repository_owner }}"
+          BASE_URL="https://github.com/${REPO_OWNER}/copilot2api-go/releases/download/${VERSION}"
+
+          cat > /tmp/copilot-go.rb << EOF
+          class CopilotGo < Formula
+            desc "GitHub Copilot token → OpenAI / Anthropic API proxy"
+            homepage "https://github.com/${REPO_OWNER}/copilot2api-go"
+            version "${VERSION#v}"
+            license "MIT"
+
+            on_macos do
+              on_arm do
+                url "${BASE_URL}/copilot-go_${VERSION}_darwin_arm64.tar.gz"
+                sha256 "${{ steps.sha256.outputs.darwin_arm64 }}"
+              end
+              on_intel do
+                url "${BASE_URL}/copilot-go_${VERSION}_darwin_amd64.tar.gz"
+                sha256 "${{ steps.sha256.outputs.darwin_amd64 }}"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                if Hardware::CPU.is_64_bit?
+                  url "${BASE_URL}/copilot-go_${VERSION}_linux_arm64.tar.gz"
+                  sha256 "${{ steps.sha256.outputs.linux_arm64 }}"
+                end
+              end
+              on_intel do
+                url "${BASE_URL}/copilot-go_${VERSION}_linux_amd64.tar.gz"
+                sha256 "${{ steps.sha256.outputs.linux_amd64 }}"
+              end
+            end
+
+            def install
+              libexec.install "copilot-go"
+              libexec.install "web"
+              (bin/"copilot-go").write <<~SH
+                #!/bin/bash
+                cd "#{libexec}" && exec "#{libexec}/copilot-go" "\$@"
+              SH
+            end
+
+            service do
+              run [opt_bin/"copilot-go", "--web-port=37000", "--proxy-port=34141"]
+              keep_alive true
+              working_dir libexec
+              log_path var/"log/copilot-go.log"
+              error_log_path var/"log/copilot-go.log"
+            end
+
+            test do
+              port = free_port
+              pid = fork { exec opt_bin/"copilot-go", "--web-port=#{port}", "--proxy-port=#{free_port}" }
+              sleep 1
+              assert_match "200", shell_output("curl -s -o /dev/null -w '%{http_code}' http://localhost:#{port}/api/config")
+            ensure
+              Process.kill("TERM", pid) rescue nil
+            end
+          end
+          EOF
+
+          # Push formula to tap repo
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${REPO_OWNER}/homebrew-copilot2api-go.git" /tmp/tap
+          mkdir -p /tmp/tap/Formula
+          cp /tmp/copilot-go.rb /tmp/tap/Formula/copilot-go.rb
+          cd /tmp/tap
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add Formula/copilot-go.rb
+          git diff --staged --quiet || git commit -m "Feature: 更新 copilot-go 至 ${VERSION}"
+          git push
 
   docker:
     runs-on: ubuntu-latest
