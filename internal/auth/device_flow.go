@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"copilot-go/config"
+	"copilot-go/internal/config"
 
 	"github.com/google/uuid"
 )

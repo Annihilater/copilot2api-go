@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"copilot-go/config"
-	"copilot-go/copilot"
-	"copilot-go/store"
+	"copilot-go/internal/config"
+	"copilot-go/internal/copilot"
+	"copilot-go/internal/store"
 )
 
 type ProxyInstance struct {

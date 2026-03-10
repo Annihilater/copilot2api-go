@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"strings"
 
-	"copilot-go/anthropic"
-	"copilot-go/config"
-	"copilot-go/store"
+	"copilot-go/internal/anthropic"
+	"copilot-go/internal/config"
+	"copilot-go/internal/store"
 
 	"github.com/gin-gonic/gin"
 )

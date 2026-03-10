@@ -6,10 +6,10 @@ import (
 	"log"
 	"sync"
 
-	"copilot-go/config"
-	"copilot-go/handler"
-	"copilot-go/instance"
-	"copilot-go/store"
+	"copilot-go/internal/config"
+	"copilot-go/internal/handler"
+	"copilot-go/internal/instance"
+	"copilot-go/internal/store"
 
 	"github.com/gin-gonic/gin"
 )

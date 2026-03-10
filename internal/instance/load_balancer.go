@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"copilot-go/store"
+	"copilot-go/internal/store"
 )
 
 var rrIndex atomic.Int64

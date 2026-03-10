@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"copilot-go/store"
+	"copilot-go/internal/store"
 )
 
 // TranslateToOpenAI converts an Anthropic messages payload to OpenAI chat completions payload.

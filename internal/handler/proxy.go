@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"copilot-go/config"
-	"copilot-go/instance"
-	"copilot-go/store"
+	"copilot-go/internal/config"
+	"copilot-go/internal/instance"
+	"copilot-go/internal/store"
 
 	"github.com/gin-gonic/gin"
 )

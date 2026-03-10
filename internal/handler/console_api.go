@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"copilot-go/auth"
-	"copilot-go/config"
-	"copilot-go/instance"
-	"copilot-go/store"
+	"copilot-go/internal/auth"
+	"copilot-go/internal/config"
+	"copilot-go/internal/instance"
+	"copilot-go/internal/store"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
