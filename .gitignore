@@ -2,8 +2,9 @@
 /web/dist/
 /web/node_modules/
 
-# 后端
+# 后端构建产物
 copilot-go
+copilot-go.exe
 
 # 运行时产物
 /tmp/
