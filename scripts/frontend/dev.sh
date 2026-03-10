@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# dev-frontend.sh - 开发模式启动 Vite 前端开发服务器
+# dev.sh - 启动 Vite 前端开发服务器
 #
 # 用法:
-#   bash scripts/dev-frontend.sh
+#   bash scripts/frontend/dev.sh
 #
 # 访问:
 #   前端热更新 → http://localhost:35173  (HMR)
 #   /api 请求会代理到 → http://localhost:37000 (Go 后端)
 #
-# 请先确保 Go 后端已启动: bash scripts/dev.sh 或 bash scripts/start.sh
+# 请先确保 Go 后端已启动: bash scripts/backend/dev.sh 或 bash scripts/backend/start.sh
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # 检测包管理器
 if command -v bun &>/dev/null; then

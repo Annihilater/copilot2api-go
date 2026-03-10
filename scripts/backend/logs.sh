@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # logs.sh - 查看实时日志
+#
+# 用法:
+#   bash scripts/backend/logs.sh
+
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 LOG_FILE="${ROOT_DIR}/logs/copilot-go.log"
 

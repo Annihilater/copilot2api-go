@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # start.sh - 后台启动（生产/常驻运行）
+#
+# 用法:
+#   bash scripts/backend/start.sh
+
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 cd "$ROOT_DIR"
 
@@ -48,5 +52,5 @@ echo "  Web Console : http://localhost:${WEB_PORT}"
 echo "  Proxy       : http://localhost:${PROXY_PORT}"
 echo "  日志文件    : $LOG_FILE"
 echo ""
-echo "查看日志: bash scripts/logs.sh"
-echo "停止服务: bash scripts/stop.sh"
+echo "查看日志: bash scripts/backend/logs.sh"
+echo "停止服务: bash scripts/backend/stop.sh"

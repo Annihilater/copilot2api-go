@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # stop.sh - 停止后台运行的服务
+#
+# 用法:
+#   bash scripts/backend/stop.sh
+
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 PID_FILE="${ROOT_DIR}/tmp/copilot-go.pid"
 
