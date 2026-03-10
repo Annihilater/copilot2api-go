@@ -6,8 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 PID_FILE="${ROOT_DIR}/tmp/copilot-go.pid"
-WEB_PORT="${WEB_PORT:-3000}"
-PROXY_PORT="${PROXY_PORT:-4141}"
+WEB_PORT="${WEB_PORT:-37000}"
+PROXY_PORT="${PROXY_PORT:-34141}"
 
 echo "=== copilot-go 服务状态 ==="
 

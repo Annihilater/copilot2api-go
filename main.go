@@ -15,8 +15,8 @@ import (
 )
 
 func main() {
-	webPort := flag.Int("web-port", 3000, "Web console port")
-	proxyPort := flag.Int("proxy-port", 4141, "Proxy server port")
+	webPort := flag.Int("web-port", 37000, "Web console port")
+	proxyPort := flag.Int("proxy-port", 34141, "Proxy server port")
 	verbose := flag.Bool("verbose", false, "Enable verbose logging")
 	autoStart := flag.Bool("auto-start", true, "Auto-start enabled accounts")
 	flag.Parse()

@@ -7,8 +7,8 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$ROOT_DIR"
 
-WEB_PORT="${WEB_PORT:-3000}"
-PROXY_PORT="${PROXY_PORT:-4141}"
+WEB_PORT="${WEB_PORT:-37000}"
+PROXY_PORT="${PROXY_PORT:-34141}"
 PID_FILE="${ROOT_DIR}/tmp/copilot-go.pid"
 LOG_FILE="${ROOT_DIR}/logs/copilot-go.log"
 
