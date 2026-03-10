@@ -1,7 +1,13 @@
+# 前端
 /web/dist/
-za
+/web/node_modules/
+
+# 后端
+copilot-go
 
 # 运行时产物
 /tmp/
 /logs/
-copilot-go
+
+# 杂项
+za
