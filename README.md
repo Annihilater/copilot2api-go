@@ -33,10 +33,10 @@ A reverse-engineered proxy for the GitHub Copilot API, rewritten in Go. Exposes 
 
 ```bash
 # Build
-go build -o copilot-go .
+go build -o build/copilot-go .
 
 # Run (from project root so web UI is served)
-./copilot-go
+./build/copilot-go
 ```
 
 #### Docker
@@ -47,8 +47,8 @@ docker build -t copilot-go .
 
 # Run with persistent data
 docker run -d \
-  -p 3000:3000 \
-  -p 4141:4141 \
+  -p 37000:37000 \
+  -p 34141:34141 \
   -v copilot-data:/root/.local/share/copilot-api \
   copilot-go
 ```
@@ -60,8 +60,8 @@ services:
   copilot-go:
     build: .
     ports:
-      - "3000:3000"
-      - "4141:4141"
+      - "37000:37000"
+      - "34141:34141"
     volumes:
       - copilot-data:/root/.local/share/copilot-api
     restart: unless-stopped
@@ -74,14 +74,14 @@ volumes:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--web-port` | `3000` | Web console port |
-| `--proxy-port` | `4141` | Proxy API port |
+| `--web-port` | `37000` | Web console port |
+| `--proxy-port` | `34141` | Proxy API port |
 | `--verbose` | `false` | Enable verbose logging |
 | `--auto-start` | `true` | Auto-start enabled accounts on launch |
 
 ### Usage
 
-1. Open `http://localhost:3000` — create an admin account on first visit
+1. Open `http://localhost:37000` — create an admin account on first visit
 2. Add a GitHub Copilot account via OAuth device flow
 3. Start the account instance
 4. Use the account's API Key (or Pool Key) to call the proxy
@@ -123,7 +123,7 @@ curl -H "x-api-key: sk-your-api-key" ...
 #### OpenAI Chat Completions
 
 ```bash
-curl http://localhost:4141/v1/chat/completions \
+curl http://localhost:34141/v1/chat/completions \
   -H "Authorization: Bearer sk-your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -136,7 +136,7 @@ curl http://localhost:4141/v1/chat/completions \
 #### Anthropic Messages
 
 ```bash
-curl http://localhost:4141/v1/messages \
+curl http://localhost:34141/v1/messages \
   -H "x-api-key: sk-your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -149,7 +149,7 @@ curl http://localhost:4141/v1/messages \
 #### Claude Code Integration
 
 ```bash
-ANTHROPIC_BASE_URL=http://localhost:4141 \
+ANTHROPIC_BASE_URL=http://localhost:34141 \
 ANTHROPIC_API_KEY=sk-your-api-key \
 claude
 ```
@@ -159,7 +159,7 @@ Or create `.claude/settings.json` in your project:
 ```json
 {
   "env": {
-    "ANTHROPIC_BASE_URL": "http://localhost:4141",
+    "ANTHROPIC_BASE_URL": "http://localhost:34141",
     "ANTHROPIC_AUTH_TOKEN": "sk-your-api-key",
     "ANTHROPIC_MODEL": "claude-sonnet-4",
     "ANTHROPIC_SMALL_FAST_MODEL": "gpt-4.1-mini"
@@ -215,30 +215,55 @@ Copilot returns non-standard model IDs. The mapping feature lets you configure b
 ### Project Structure
 
 ```
-copilot-go/
+copilot2api-go/
 ├── main.go                      # Entry point, starts web console + proxy
-├── config/config.go             # Constants, State, header builders
-├── store/                       # JSON file persistence
-│   ├── paths.go                 # Data directory management
-│   ├── account.go               # Account CRUD
-│   ├── admin.go                 # Admin auth + sessions
-│   └── model_map.go             # Model ID mapping
-├── auth/device_flow.go          # GitHub OAuth device flow
-├── copilot/vscode_version.go    # VSCode version fetcher
-├── anthropic/                   # Anthropic ↔ OpenAI protocol translation
-│   ├── types.go                 # All type definitions
-│   ├── translate_request.go     # Anthropic → OpenAI request
-│   ├── translate_response.go    # OpenAI → Anthropic response
-│   ├── stream_translation.go    # Streaming SSE event translation
-│   └── utils.go                 # Stop reason mapping
-├── instance/                    # Instance lifecycle
-│   ├── manager.go               # Start/stop, token refresh
-│   ├── handler.go               # Proxy request handlers
-│   └── load_balancer.go         # Round-robin / priority selection
-├── handler/                     # HTTP routing
-│   ├── console_api.go           # Web Console API + static files
-│   └── proxy.go                 # Proxy routes + auth middleware
+├── go.mod / go.sum              # Go dependencies
+├── Dockerfile                   # Multi-stage build (frontend + backend)
+├── docs/                        # Documentation
+├── build/                       # Local build output (gitignored)
+├── internal/                    # Backend source code
+│   ├── scripts/                 # Backend management scripts
+│   │   ├── dev.sh               # Foreground run (verbose, go run)
+│   │   ├── start.sh             # Background daemon start
+│   │   ├── stop.sh              # Stop service
+│   │   ├── restart.sh           # Restart service
+│   │   ├── status.sh            # Show service status
+│   │   └── logs.sh              # Tail live logs
+│   ├── config/config.go         # Constants, State, header builders
+│   ├── store/                   # JSON file persistence
+│   │   ├── paths.go             # Data directory management
+│   │   ├── account.go           # Account CRUD
+│   │   ├── admin.go             # Admin auth + sessions
+│   │   └── model_map.go         # Model ID mapping
+│   ├── auth/device_flow.go      # GitHub OAuth device flow
+│   ├── copilot/vscode_version.go# VSCode version fetcher
+│   ├── anthropic/               # Anthropic ↔ OpenAI protocol translation
+│   │   ├── types.go             # All type definitions
+│   │   ├── translate_request.go # Anthropic → OpenAI request
+│   │   ├── translate_response.go# OpenAI → Anthropic response
+│   │   ├── stream_translation.go# Streaming SSE event translation
+│   │   └── utils.go             # Stop reason mapping
+│   ├── instance/                # Instance lifecycle
+│   │   ├── manager.go           # Start/stop, token refresh
+│   │   ├── handler.go           # Proxy request handlers
+│   │   ├── load_balancer.go     # Round-robin / priority selection
+│   │   ├── rate_limiter.go      # Rate limiting
+│   │   └── usage.go             # Usage tracking
+│   └── handler/                 # HTTP routing
+│       ├── console_api.go       # Web Console API + static files
+│       └── proxy.go             # Proxy routes + auth middleware
 └── web/                         # React frontend (Vite + TypeScript)
+    ├── scripts/                 # Frontend management scripts
+    │   ├── dev.sh               # Foreground Vite dev server (HMR)
+    │   ├── build.sh             # Build to web/dist/
+    │   ├── start.sh             # Background Vite dev server
+    │   ├── stop.sh              # Stop service
+    │   ├── restart.sh           # Restart service
+    │   ├── status.sh            # Show service status
+    │   └── logs.sh              # Tail live logs
+    ├── src/                     # Frontend source
+    ├── dist/                    # Build output (served by Go, gitignored)
+    └── vite.config.ts           # Dev server config (port 35173)
 ```
 
 ### Data Storage
@@ -291,10 +316,10 @@ GitHub Copilot API 反向代理服务（Go 重写版），支持多账号 Web �
 
 ```bash
 # 编译
-go build -o copilot-go .
+go build -o build/copilot-go .
 
 # 运行（在项目根目录，以便加载 Web UI）
-./copilot-go
+./build/copilot-go
 ```
 
 #### Docker
@@ -305,8 +330,8 @@ docker build -t copilot-go .
 
 # 运行（持久化数据）
 docker run -d \
-  -p 3000:3000 \
-  -p 4141:4141 \
+  -p 37000:37000 \
+  -p 34141:34141 \
   -v copilot-data:/root/.local/share/copilot-api \
   copilot-go
 ```
@@ -318,8 +343,8 @@ services:
   copilot-go:
     build: .
     ports:
-      - "3000:3000"
-      - "4141:4141"
+      - "37000:37000"
+      - "34141:34141"
     volumes:
       - copilot-data:/root/.local/share/copilot-api
     restart: unless-stopped
@@ -332,14 +357,14 @@ volumes:
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `--web-port` | `3000` | Web 控制台端口 |
-| `--proxy-port` | `4141` | 代理 API 端口 |
+| `--web-port` | `37000` | Web 控制台端口 |
+| `--proxy-port` | `34141` | 代理 API 端口 |
 | `--verbose` | `false` | 详细日志 |
 | `--auto-start` | `true` | 启动时自动启动已启用的账号 |
 
 ### 使用方法
 
-1. 访问 `http://localhost:3000`，首次使用创建管理员账号
+1. 访问 `http://localhost:37000`，首次使用创建管理员账号
 2. 通过 GitHub OAuth 设备流添加 Copilot 账号
 3. 启动账号实例
 4. 使用账号 API Key 或 Pool Key 调用代理接口
@@ -378,7 +403,7 @@ curl -H "x-api-key: sk-your-api-key" ...
 #### OpenAI 对话补全
 
 ```bash
-curl http://localhost:4141/v1/chat/completions \
+curl http://localhost:34141/v1/chat/completions \
   -H "Authorization: Bearer sk-your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -391,7 +416,7 @@ curl http://localhost:4141/v1/chat/completions \
 #### Anthropic 消息
 
 ```bash
-curl http://localhost:4141/v1/messages \
+curl http://localhost:34141/v1/messages \
   -H "x-api-key: sk-your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -404,7 +429,7 @@ curl http://localhost:4141/v1/messages \
 #### Claude Code 集成
 
 ```bash
-ANTHROPIC_BASE_URL=http://localhost:4141 \
+ANTHROPIC_BASE_URL=http://localhost:34141 \
 ANTHROPIC_API_KEY=sk-your-api-key \
 claude
 ```
@@ -414,7 +439,7 @@ claude
 ```json
 {
   "env": {
-    "ANTHROPIC_BASE_URL": "http://localhost:4141",
+    "ANTHROPIC_BASE_URL": "http://localhost:34141",
     "ANTHROPIC_AUTH_TOKEN": "sk-your-api-key",
     "ANTHROPIC_MODEL": "claude-sonnet-4",
     "ANTHROPIC_SMALL_FAST_MODEL": "gpt-4.1-mini"
