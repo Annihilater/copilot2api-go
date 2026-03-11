@@ -158,7 +158,7 @@ jobs:
           EOF
 
           # Push formula to tap repo
-          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${REPO_OWNER}/homebrew-copilot2api-go.git" /tmp/tap
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${REPO_OWNER}/homebrew-tap.git" /tmp/tap
           mkdir -p /tmp/tap/Formula
           cp /tmp/copilot-go.rb /tmp/tap/Formula/copilot-go.rb
           cd /tmp/tap
