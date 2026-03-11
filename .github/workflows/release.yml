@@ -61,7 +61,7 @@ jobs:
             mkdir -p "dist/${PKG}"
 
             GOOS="$GOOS" GOARCH="$GOARCH" CGO_ENABLED=0 \
-              go build -ldflags="-s -w" \
+              go build -ldflags="-s -w" -trimpath \
               -o "dist/${PKG}/copilot-go${EXT}" .
 
             mkdir -p "dist/${PKG}/web"
@@ -169,8 +169,19 @@ jobs:
           git diff --staged --quiet || git commit -m "Feature: 更新 copilot-go 至 ${VERSION}"
           git push
 
+      # Upload linux binaries as artifact for docker job to reuse
+      - name: Upload linux binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binaries
+          path: |
+            dist/copilot-go_${{ steps.meta.outputs.version }}_linux_amd64/
+            dist/copilot-go_${{ steps.meta.outputs.version }}_linux_arm64/
+          retention-days: 1
+
   docker:
     runs-on: ubuntu-latest
+    needs: build-release
     permissions:
       packages: write
 
@@ -178,8 +189,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      # Download pre-built linux binaries — no QEMU compilation needed
+      - name: Download linux binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-binaries
+          path: dist/
+
+      - name: Prepare binary layout for Dockerfile.ci
+        run: |
+          VERSION="${{ needs.build-release.outputs.version }}"
+          # Rename to flat names expected by Dockerfile.ci
+          mv "dist/copilot-go_${VERSION}_linux_amd64" dist/copilot-go_linux_amd64
+          mv "dist/copilot-go_${VERSION}_linux_arm64" dist/copilot-go_linux_arm64
+          chmod +x dist/copilot-go_linux_amd64/copilot-go dist/copilot-go_linux_arm64/copilot-go
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -205,6 +228,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile.ci
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

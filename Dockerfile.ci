@@ -1,0 +1,16 @@
+# CI-optimized Dockerfile: copies pre-built binaries from build-release job
+# Used by .github/workflows/release.yml to avoid recompiling in QEMU
+
+# Runtime image only - binary and web/dist are COPY'd in from CI artifacts
+FROM alpine:3.21
+RUN apk add --no-cache ca-certificates tzdata
+WORKDIR /app
+# ARG TARGETARCH is set automatically by docker buildx
+ARG TARGETARCH
+COPY dist/copilot-go_linux_${TARGETARCH}/copilot-go .
+COPY dist/copilot-go_linux_${TARGETARCH}/web/dist ./web/dist
+
+EXPOSE 37000 34141
+VOLUME /root/.local/share/copilot-api
+
+ENTRYPOINT ["./copilot-go"]
