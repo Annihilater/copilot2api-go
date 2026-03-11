@@ -99,8 +99,8 @@ jobs:
           REPO_OWNER="${{ github.repository_owner }}"
           BASE_URL="https://github.com/${REPO_OWNER}/copilot2api-go/releases/download/${VERSION}"
 
-          cat > /tmp/copilot-go.rb << EOF
-          class CopilotGo < Formula
+          cat > /tmp/copilot2api-go.rb << EOF
+          class Copilot2apiGo < Formula
             desc "GitHub Copilot token → OpenAI / Anthropic API proxy"
             homepage "https://github.com/${REPO_OWNER}/copilot2api-go"
             version "${VERSION#v}"
@@ -133,23 +133,23 @@ jobs:
             def install
               libexec.install "copilot-go"
               libexec.install "web"
-              (bin/"copilot-go").write <<~SH
+              (bin/"copilot2api-go").write <<~SH
                 #!/bin/bash
                 cd "#{libexec}" && exec "#{libexec}/copilot-go" "\$@"
               SH
             end
 
             service do
-              run [opt_bin/"copilot-go", "--web-port=37000", "--proxy-port=34141"]
+              run [opt_bin/"copilot2api-go", "--web-port=37000", "--proxy-port=34141"]
               keep_alive true
               working_dir libexec
-              log_path var/"log/copilot-go.log"
-              error_log_path var/"log/copilot-go.log"
+              log_path var/"log/copilot2api-go.log"
+              error_log_path var/"log/copilot2api-go.log"
             end
 
             test do
               port = free_port
-              pid = fork { exec opt_bin/"copilot-go", "--web-port=#{port}", "--proxy-port=#{free_port}" }
+              pid = fork { exec opt_bin/"copilot2api-go", "--web-port=#{port}", "--proxy-port=#{free_port}" }
               sleep 1
               assert_match "200", shell_output("curl -s -o /dev/null -w '%{http_code}' http://localhost:#{port}/api/config")
             ensure
@@ -161,12 +161,12 @@ jobs:
           # Push formula to tap repo
           git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${REPO_OWNER}/homebrew-tap.git" /tmp/tap
           mkdir -p /tmp/tap/Formula
-          cp /tmp/copilot-go.rb /tmp/tap/Formula/copilot-go.rb
+          cp /tmp/copilot2api-go.rb /tmp/tap/Formula/copilot2api-go.rb
           cd /tmp/tap
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add Formula/copilot-go.rb
-          git diff --staged --quiet || git commit -m "Feature: 更新 copilot-go 至 ${VERSION}"
+          git add Formula/copilot2api-go.rb
+          git diff --staged --quiet || git commit -m "Feature: 更新 copilot2api-go 至 ${VERSION}"
           git push
 
       # Upload linux binaries as artifact for docker job to reuse
