@@ -68,19 +68,34 @@ docker run -d \
 
 #### Docker Compose
 
+A `docker-compose.yaml` is included in the project root. Simply run:
+
+```bash
+docker compose up -d
+```
+
+Or customize it as needed:
+
 ```yaml
 services:
   copilot-go:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: copilot-go
+    restart: unless-stopped
     ports:
-      - "37000:37000"
-      - "34141:34141"
+      - "37000:37000"   # Web Console
+      - "34141:34141"   # Proxy API
     volumes:
       - copilot-data:/root/.local/share/copilot-api
-    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+    command: ["./copilot-go", "--web-port=37000", "--proxy-port=34141"]
 
 volumes:
   copilot-data:
+    driver: local
 ```
 
 ### Command Line Options
@@ -364,19 +379,34 @@ docker run -d \
 
 #### Docker Compose
 
+A `docker-compose.yaml` is included in the project root. Simply run:
+
+```bash
+docker compose up -d
+```
+
+Or customize it as needed:
+
 ```yaml
 services:
   copilot-go:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: copilot-go
+    restart: unless-stopped
     ports:
-      - "37000:37000"
-      - "34141:34141"
+      - "37000:37000"   # Web Console
+      - "34141:34141"   # Proxy API
     volumes:
       - copilot-data:/root/.local/share/copilot-api
-    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+    command: ["./copilot-go", "--web-port=37000", "--proxy-port=34141"]
 
 volumes:
   copilot-data:
+    driver: local
 ```
 
 ### 命令行参数
