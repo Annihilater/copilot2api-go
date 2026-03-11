@@ -1,12 +1,6 @@
-# Copilot API Go
+# copilot2api-go
 
-[English](#english) | [中文](#中文)
-
----
-
-<a id="english"></a>
-
-## English
+[English](README.md) | [中文](README.zh-CN.md)
 
 A reverse-engineered proxy for the GitHub Copilot API, rewritten in Go. Exposes Copilot as OpenAI and Anthropic compatible API services with a multi-account web console for management and load balancing.
 
@@ -14,7 +8,7 @@ A reverse-engineered proxy for the GitHub Copilot API, rewritten in Go. Exposes 
 >
 > **GitHub Security Notice**: Excessive automated or scripted use of Copilot may trigger GitHub's abuse-detection systems. Please review [GitHub Acceptable Use Policies](https://docs.github.com/en/site-policy/acceptable-use-policies) and [GitHub Copilot Terms](https://docs.github.com/en/site-policy/github-terms/github-copilot-product-specific-terms).
 
-### Features
+## Features
 
 - **Multi-Account Management**: Web console to add, remove, start, and stop multiple GitHub Copilot accounts
 - **Pool Mode Load Balancing**: Distribute requests across accounts using Round-Robin or Priority strategies
@@ -25,11 +19,18 @@ A reverse-engineered proxy for the GitHub Copilot API, rewritten in Go. Exposes 
 - **GitHub OAuth Device Flow**: Authenticate accounts directly from the web console
 - **Admin Authentication**: Password-protected console with session management
 - **Bilingual Web UI**: English and Chinese interface with auto-detection
-- **Docker Ready**: Multi-stage Dockerfile for minimal production images
+- **Docker Ready**: Pre-built multi-arch images published to GHCR on every release
 
-### Quick Start
+## Default Ports
 
-#### Homebrew (macOS recommended)
+| Service | Port | Description |
+|---------|------|-------------|
+| Web Console | `37000` | Management UI |
+| Proxy API | `34141` | OpenAI / Anthropic compatible endpoint |
+
+## Installation
+
+### Homebrew (macOS recommended)
 
 ```bash
 brew tap Annihilater/tap
@@ -39,50 +40,115 @@ brew install copilot2api-go
 brew services start copilot2api-go
 ```
 
-- Web Console: http://localhost:37000
-- Proxy API: http://localhost:34141
-
-#### From Source
+Service management:
 
 ```bash
-# Build
-go build -o build/copilot-go .
+brew services start   copilot2api-go   # start & enable at login
+brew services stop    copilot2api-go   # stop
+brew services restart copilot2api-go   # restart after upgrade
 
-# Run (from project root so web UI is served)
-./build/copilot-go
+# View logs
+tail -f $(brew --prefix)/var/log/copilot2api-go.log
 ```
 
-#### Docker
+Custom ports:
 
 ```bash
-# Build image
-docker build -t copilot-go .
+brew services stop copilot2api-go
+copilot2api-go --web-port=8080 --proxy-port=9090
+```
 
-# Run with persistent data
+---
+
+### Docker (pre-built image — recommended for servers)
+
+Pre-built multi-arch images (`linux/amd64`, `linux/arm64`) are published to GitHub Container Registry on every release. No build step required.
+
+```bash
+docker pull ghcr.io/annihilater/copilot2api-go:latest
+
 docker run -d \
+  --name copilot2api-go \
+  --restart unless-stopped \
   -p 37000:37000 \
   -p 34141:34141 \
   -v copilot-data:/root/.local/share/copilot-api \
-  copilot-go
+  -e TZ=Asia/Shanghai \
+  ghcr.io/annihilater/copilot2api-go:latest
 ```
 
-#### Docker Compose
+Pin to a specific version (recommended for production):
 
-A `docker-compose.yaml` is included in the project root. Simply run:
+```bash
+docker run -d \
+  --name copilot2api-go \
+  --restart unless-stopped \
+  -p 37000:37000 \
+  -p 34141:34141 \
+  -v copilot-data:/root/.local/share/copilot-api \
+  -e TZ=Asia/Shanghai \
+  ghcr.io/annihilater/copilot2api-go:0.1.3
+```
+
+Available tags:
+- `latest` — latest release
+- `0.1.3` — specific version
+- `0.1` — latest patch of a minor version
+
+---
+
+### Docker Compose (pre-built image)
+
+Create a `docker-compose.yaml`:
+
+```yaml
+services:
+  copilot2api-go:
+    image: ghcr.io/annihilater/copilot2api-go:latest
+    container_name: copilot2api-go
+    restart: unless-stopped
+    ports:
+      - "37000:37000"   # Web Console
+      - "34141:34141"   # Proxy API
+    volumes:
+      - copilot-data:/root/.local/share/copilot-api
+    environment:
+      - TZ=Asia/Shanghai
+
+volumes:
+  copilot-data:
+    driver: local
+```
+
+```bash
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Upgrade to latest
+docker compose pull && docker compose up -d
+```
+
+---
+
+### Docker Compose (build from source)
+
+A `docker-compose.yaml` is included in the project root:
 
 ```bash
 docker compose up -d
 ```
 
-Or customize it as needed:
+Or customize it:
 
 ```yaml
 services:
-  copilot-go:
+  copilot2api-go:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: copilot-go
+    container_name: copilot2api-go
     restart: unless-stopped
     ports:
       - "37000:37000"   # Web Console
@@ -98,7 +164,33 @@ volumes:
     driver: local
 ```
 
-### Command Line Options
+---
+
+### From Source
+
+```bash
+# 1. Build frontend
+bash web/scripts/build.sh
+
+# 2. Build binary
+go build -o build/copilot-go .
+
+# 3. Run (from project root so web UI is found)
+./build/copilot-go --web-port=37000 --proxy-port=34141
+```
+
+Background daemon (Linux/macOS):
+
+```bash
+bash internal/scripts/start.sh    # start in background
+bash internal/scripts/status.sh   # check status
+bash internal/scripts/logs.sh     # tail logs
+bash internal/scripts/stop.sh     # stop
+```
+
+---
+
+## Command Line Options
 
 | Option | Default | Description |
 |--------|---------|-------------|
@@ -107,16 +199,17 @@ volumes:
 | `--verbose` | `false` | Enable verbose logging |
 | `--auto-start` | `true` | Auto-start enabled accounts on launch |
 
-### Usage
+## Quick Setup
 
-1. Open `http://localhost:37000` — create an admin account on first visit
-2. Add a GitHub Copilot account via OAuth device flow
-3. Start the account instance
-4. Use the account's API Key (or Pool Key) to call the proxy
+1. Open **http://localhost:37000** — create an admin account on first visit
+2. Click **Add Account** → authenticate via GitHub OAuth device flow
+3. Click **Start** on the account — wait for status to show **Running**
+4. Copy the **API Key** (`sk-...`) from the account detail page
+5. Point your AI client to `http://localhost:34141` with the API Key
 
-### API Endpoints
+## API Reference
 
-#### OpenAI Compatible
+### OpenAI Compatible Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -125,30 +218,29 @@ volumes:
 | `/v1/embeddings` | POST | Create embeddings |
 | `/chat/completions` | POST | Alias without `/v1` prefix |
 | `/models` | GET | Alias without `/v1` prefix |
-| `/embeddings` | POST | Alias without `/v1` prefix |
 
-#### Anthropic Compatible
+### Anthropic Compatible Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/v1/messages` | POST | Messages API (streaming supported) |
-| `/v1/messages/count_tokens` | POST | Token counting (estimation) |
+| `/v1/messages/count_tokens` | POST | Token counting |
 
-#### Authentication
+### Authentication
 
-All proxy endpoints require a Bearer token:
+Both header styles are supported:
 
 ```bash
-# Using Authorization header (OpenAI style)
-curl -H "Authorization: Bearer sk-your-api-key" ...
+# OpenAI style
+Authorization: Bearer sk-your-api-key
 
-# Using x-api-key header (Anthropic style)
-curl -H "x-api-key: sk-your-api-key" ...
+# Anthropic style
+x-api-key: sk-your-api-key
 ```
 
-### Examples
+## Usage Examples
 
-#### OpenAI Chat Completions
+### OpenAI Chat Completions
 
 ```bash
 curl http://localhost:34141/v1/chat/completions \
@@ -161,12 +253,13 @@ curl http://localhost:34141/v1/chat/completions \
   }'
 ```
 
-#### Anthropic Messages
+### Anthropic Messages
 
 ```bash
 curl http://localhost:34141/v1/messages \
   -H "x-api-key: sk-your-api-key" \
   -H "Content-Type: application/json" \
+  -H "anthropic-version: 2023-06-01" \
   -d '{
     "model": "claude-sonnet-4",
     "max_tokens": 1024,
@@ -174,7 +267,7 @@ curl http://localhost:34141/v1/messages \
   }'
 ```
 
-#### Claude Code Integration
+### Claude Code
 
 ```bash
 ANTHROPIC_BASE_URL=http://localhost:34141 \
@@ -195,9 +288,36 @@ Or create `.claude/settings.json` in your project:
 }
 ```
 
-### Web Console API
+### Python (OpenAI SDK)
 
-#### Public Endpoints
+```python
+from openai import OpenAI
+
+client = OpenAI(api_key="sk-your-api-key", base_url="http://localhost:34141/v1")
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+print(response.choices[0].message.content)
+```
+
+### Python (Anthropic SDK)
+
+```python
+import anthropic
+
+client = anthropic.Anthropic(api_key="sk-your-api-key", base_url="http://localhost:34141")
+message = client.messages.create(
+    model="claude-sonnet-4",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+print(message.content[0].text)
+```
+
+## Web Console API
+
+### Public Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -205,328 +325,68 @@ Or create `.claude/settings.json` in your project:
 | `/api/auth/setup` | POST | Initial admin setup |
 | `/api/auth/login` | POST | Admin login |
 
-#### Protected Endpoints (require admin session token)
+### Protected Endpoints (require admin session token)
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/auth/check` | GET | Validate session |
 | `/api/accounts` | GET | List all accounts with status |
-| `/api/accounts/usage` | GET | Batch usage query |
-| `/api/accounts/:id` | GET | Get single account |
 | `/api/accounts` | POST | Add account |
 | `/api/accounts/:id` | PUT | Update account |
 | `/api/accounts/:id` | DELETE | Delete account |
-| `/api/accounts/:id/regenerate-key` | POST | Regenerate API key |
 | `/api/accounts/:id/start` | POST | Start instance |
 | `/api/accounts/:id/stop` | POST | Stop instance |
 | `/api/accounts/:id/usage` | GET | Get account usage |
+| `/api/accounts/:id/regenerate-key` | POST | Regenerate API key |
 | `/api/auth/device-code` | POST | Start GitHub OAuth flow |
 | `/api/auth/poll/:sessionId` | GET | Poll OAuth status |
 | `/api/auth/complete` | POST | Complete OAuth and create account |
-| `/api/pool` | GET | Get pool config |
-| `/api/pool` | PUT | Update pool config |
+| `/api/pool` | GET / PUT | Get/update pool config |
 | `/api/pool/regenerate-key` | POST | Regenerate pool API key |
-| `/api/model-map` | GET | Get model ID mappings |
-| `/api/model-map` | PUT | Batch update mappings |
-| `/api/model-map` | POST | Add single mapping |
+| `/api/model-map` | GET / PUT / POST | Manage model ID mappings |
 | `/api/model-map/:copilotId` | DELETE | Delete mapping |
 
-### Model ID Mapping
+## Data Storage
 
-Copilot returns non-standard model IDs. The mapping feature lets you configure bidirectional translations:
-
-- `/v1/models` returns mapped display IDs
-- Incoming requests translate display IDs back to Copilot internal IDs
-- Mappings are persisted to `~/.local/share/copilot-api/model_map.json`
-- Configurable via the Web Console "Model ID Mapping" panel
-
-### Project Structure
-
-```
-copilot2api-go/
-├── main.go                      # Entry point, starts web console + proxy
-├── go.mod / go.sum              # Go dependencies
-├── Dockerfile                   # Multi-stage build (frontend + backend)
-├── docs/                        # Documentation
-├── build/                       # Local build output (gitignored)
-├── internal/                    # Backend source code
-│   ├── scripts/                 # Backend management scripts
-│   │   ├── dev.sh               # Foreground run (verbose, go run)
-│   │   ├── start.sh             # Background daemon start
-│   │   ├── stop.sh              # Stop service
-│   │   ├── restart.sh           # Restart service
-│   │   ├── status.sh            # Show service status
-│   │   └── logs.sh              # Tail live logs
-│   ├── config/config.go         # Constants, State, header builders
-│   ├── store/                   # JSON file persistence
-│   │   ├── paths.go             # Data directory management
-│   │   ├── account.go           # Account CRUD
-│   │   ├── admin.go             # Admin auth + sessions
-│   │   └── model_map.go         # Model ID mapping
-│   ├── auth/device_flow.go      # GitHub OAuth device flow
-│   ├── copilot/vscode_version.go# VSCode version fetcher
-│   ├── anthropic/               # Anthropic ↔ OpenAI protocol translation
-│   │   ├── types.go             # All type definitions
-│   │   ├── translate_request.go # Anthropic → OpenAI request
-│   │   ├── translate_response.go# OpenAI → Anthropic response
-│   │   ├── stream_translation.go# Streaming SSE event translation
-│   │   └── utils.go             # Stop reason mapping
-│   ├── instance/                # Instance lifecycle
-│   │   ├── manager.go           # Start/stop, token refresh
-│   │   ├── handler.go           # Proxy request handlers
-│   │   ├── load_balancer.go     # Round-robin / priority selection
-│   │   ├── rate_limiter.go      # Rate limiting
-│   │   └── usage.go             # Usage tracking
-│   └── handler/                 # HTTP routing
-│       ├── console_api.go       # Web Console API + static files
-│       └── proxy.go             # Proxy routes + auth middleware
-└── web/                         # React frontend (Vite + TypeScript)
-    ├── scripts/                 # Frontend management scripts
-    │   ├── dev.sh               # Foreground Vite dev server (HMR)
-    │   ├── build.sh             # Build to web/dist/
-    │   ├── start.sh             # Background Vite dev server
-    │   ├── stop.sh              # Stop service
-    │   ├── restart.sh           # Restart service
-    │   ├── status.sh            # Show service status
-    │   └── logs.sh              # Tail live logs
-    ├── src/                     # Frontend source
-    ├── dist/                    # Build output (served by Go, gitignored)
-    └── vite.config.ts           # Dev server config (port 35173)
-```
-
-### Data Storage
-
-All data is stored in `~/.local/share/copilot-api/`:
+All data is persisted in `~/.local/share/copilot-api/`:
 
 | File | Content |
 |------|---------|
-| `accounts.json` | Account list |
+| `accounts.json` | Account list and tokens |
 | `pool-config.json` | Pool mode settings |
 | `admin.json` | Admin password hash |
 | `model_map.json` | Model ID mappings |
 
-### Credits
+## Project Structure
+
+```
+copilot2api-go/
+├── main.go                      # Entry point
+├── go.mod / go.sum
+├── Dockerfile                   # Multi-stage build
+├── Dockerfile.ci                # CI build (copies pre-built binary)
+├── docker-compose.yaml          # Docker Compose (build from source)
+├── docs/                        # Documentation
+├── build/                       # Local build output (gitignored)
+├── internal/
+│   ├── scripts/                 # Backend management scripts
+│   ├── config/config.go
+│   ├── store/                   # JSON persistence
+│   ├── auth/device_flow.go      # GitHub OAuth device flow
+│   ├── copilot/vscode_version.go
+│   ├── anthropic/               # Protocol translation
+│   ├── instance/                # Instance lifecycle + load balancer
+│   └── handler/                 # HTTP routing
+└── web/                         # React frontend (Vite + TypeScript)
+    ├── scripts/                 # Frontend management scripts
+    ├── src/
+    ├── dist/                    # Build output (gitignored)
+    └── vite.config.ts
+```
+
+## Credits
 
 Based on [ericc-ch/copilot-api](https://github.com/ericc-ch/copilot-api) (TypeScript/Bun), rewritten in Go with multi-account console mode.
 
-### License
-
-MIT
-
----
-
-<a id="中文"></a>
-
-## 中文
-
-GitHub Copilot API 反向代理服务（Go 重写版），支持多账号 Web 管理、负载均衡，将 Copilot 转为 OpenAI/Anthropic 兼容接口。
-
-> **警告**：这是一个反向工程代理，未获得 GitHub 官方支持，可能随时失效。使用风险自负。
->
-> **GitHub 安全提示**：过度的自动化或脚本化使用 Copilot 可能触发 GitHub 的滥用检测系统。请查阅 [GitHub 可接受使用政策](https://docs.github.com/en/site-policy/acceptable-use-policies) 和 [GitHub Copilot 条款](https://docs.github.com/en/site-policy/github-terms/github-copilot-product-specific-terms)。
-
-### 功能特性
-
-- **多账号管理**：Web 控制台添加、删除、启停多个 GitHub Copilot 账号
-- **Pool 模式负载均衡**：轮询（Round-Robin）或优先级（Priority）策略分发请求
-- **OpenAI 兼容接口**：`/v1/chat/completions`、`/v1/models`、`/v1/embeddings`
-- **Anthropic 兼容接口**：`/v1/messages`、`/v1/messages/count_tokens` — 自动协议转换
-- **模型 ID 映射**：Copilot 内部 ID 与标准 ID 双向映射（如 `claude-sonnet-4-20250514`）
-- **流式 SSE**：完整支持 OpenAI 和 Anthropic 格式的流式响应
-- **GitHub OAuth 设备流**：在 Web 控制台直接完成账号认证
-- **管理员认证**：密码保护的控制台，支持会话管理
-- **中英文界面**：自动检测浏览器语言，支持手动切换
-- **Docker 支持**：多阶段构建，生产镜像体积小
-
-### 快速开始
-
-#### Homebrew（macOS 推荐）
-
-```bash
-brew tap Annihilater/tap
-brew install copilot2api-go
-
-# 以后台服务方式启动（登录后自动恢复）
-brew services start copilot2api-go
-```
-
-- Web 控制台：http://localhost:37000
-- 代理 API：http://localhost:34141
-
-#### 源码编译
-
-```bash
-# 编译
-go build -o build/copilot-go .
-
-# 运行（在项目根目录，以便加载 Web UI）
-./build/copilot-go
-```
-
-#### Docker
-
-```bash
-# 构建镜像
-docker build -t copilot-go .
-
-# 运行（持久化数据）
-docker run -d \
-  -p 37000:37000 \
-  -p 34141:34141 \
-  -v copilot-data:/root/.local/share/copilot-api \
-  copilot-go
-```
-
-#### Docker Compose
-
-A `docker-compose.yaml` is included in the project root. Simply run:
-
-```bash
-docker compose up -d
-```
-
-Or customize it as needed:
-
-```yaml
-services:
-  copilot-go:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: copilot-go
-    restart: unless-stopped
-    ports:
-      - "37000:37000"   # Web Console
-      - "34141:34141"   # Proxy API
-    volumes:
-      - copilot-data:/root/.local/share/copilot-api
-    environment:
-      - TZ=Asia/Shanghai
-    command: ["./copilot-go", "--web-port=37000", "--proxy-port=34141"]
-
-volumes:
-  copilot-data:
-    driver: local
-```
-
-### 命令行参数
-
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| `--web-port` | `37000` | Web 控制台端口 |
-| `--proxy-port` | `34141` | 代理 API 端口 |
-| `--verbose` | `false` | 详细日志 |
-| `--auto-start` | `true` | 启动时自动启动已启用的账号 |
-
-### 使用方法
-
-1. 访问 `http://localhost:37000`，首次使用创建管理员账号
-2. 通过 GitHub OAuth 设备流添加 Copilot 账号
-3. 启动账号实例
-4. 使用账号 API Key 或 Pool Key 调用代理接口
-
-### API 端点
-
-#### OpenAI 兼容
-
-| 端点 | 方法 | 说明 |
-|------|------|------|
-| `/v1/chat/completions` | POST | 对话补全（支持流式） |
-| `/v1/models` | GET | 模型列表 |
-| `/v1/embeddings` | POST | 文本嵌入 |
-
-#### Anthropic 兼容
-
-| 端点 | 方法 | 说明 |
-|------|------|------|
-| `/v1/messages` | POST | 消息 API（支持流式） |
-| `/v1/messages/count_tokens` | POST | Token 计数（估算） |
-
-#### 认证方式
-
-所有代理端点需要 Bearer token：
-
-```bash
-# OpenAI 风格
-curl -H "Authorization: Bearer sk-your-api-key" ...
-
-# Anthropic 风格
-curl -H "x-api-key: sk-your-api-key" ...
-```
-
-### 使用示例
-
-#### OpenAI 对话补全
-
-```bash
-curl http://localhost:34141/v1/chat/completions \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4o",
-    "messages": [{"role": "user", "content": "你好！"}],
-    "stream": true
-  }'
-```
-
-#### Anthropic 消息
-
-```bash
-curl http://localhost:34141/v1/messages \
-  -H "x-api-key: sk-your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "claude-sonnet-4",
-    "max_tokens": 1024,
-    "messages": [{"role": "user", "content": "你好！"}]
-  }'
-```
-
-#### Claude Code 集成
-
-```bash
-ANTHROPIC_BASE_URL=http://localhost:34141 \
-ANTHROPIC_API_KEY=sk-your-api-key \
-claude
-```
-
-或在项目中创建 `.claude/settings.json`：
-
-```json
-{
-  "env": {
-    "ANTHROPIC_BASE_URL": "http://localhost:34141",
-    "ANTHROPIC_AUTH_TOKEN": "sk-your-api-key",
-    "ANTHROPIC_MODEL": "claude-sonnet-4",
-    "ANTHROPIC_SMALL_FAST_MODEL": "gpt-4.1-mini"
-  }
-}
-```
-
-### 模型 ID 映射
-
-Copilot 返回的模型 ID 不规范，映射功能支持双向转换：
-
-- `/v1/models` 返回映射后的标准 ID
-- 请求时自动将标准 ID 转回 Copilot 内部 ID
-- 映射持久化到 `~/.local/share/copilot-api/model_map.json`
-- 通过 Web 控制台「模型 ID 映射」面板配置
-
-### 数据存储
-
-所有数据存储在 `~/.local/share/copilot-api/`：
-
-| 文件 | 内容 |
-|------|------|
-| `accounts.json` | 账号列表 |
-| `pool-config.json` | Pool 模式配置 |
-| `admin.json` | 管理员密码哈希 |
-| `model_map.json` | 模型 ID 映射表 |
-
-### 致谢
-
-基于 [ericc-ch/copilot-api](https://github.com/ericc-ch/copilot-api)（TypeScript/Bun）重写为 Go，新增多账号控制台模式。
-
-### 许可证
+## License
 
 MIT
